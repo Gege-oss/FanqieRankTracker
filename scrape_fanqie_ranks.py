@@ -73,17 +73,18 @@ def run_scraper(limit=30, sleep_sec=5):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] 正在初始化并访问基础榜单页：{init_url}")
         page.goto(init_url, wait_until="load", timeout=15000)
         page.wait_for_selector('a[href^="/page/"]', timeout=5000)
-        
-        # 动态解析页面左侧拥有的所有类别目录 (通过匹配对应的榜单路由规律)
-        categories_js = """
-        () => {
+
+        rank_prefix = "/" + "/".join(init_url.rstrip("/").split("/")[-2:]).rsplit("_", 1)[0] + "_"
+        # 男频新书榜会得到 "/rank/1_1_"
+        categories_js = f"""
+        () => {{
             return Array.from(document.querySelectorAll('a'))
-                .filter(a => a.href.includes('/rank/0_1_'))
-                .map(a => ({
+                .filter(a => a.href.includes('{rank_prefix}'))
+                .map(a => ({{
                     name: a.innerText.trim(),
                     href: a.getAttribute('href')
-                }));
-        }
+                }}));
+        }}
         """
         categories = page.evaluate(categories_js)
         print(f"✅ 成功自适应提取到 {len(categories)} 个分类标签。开始全量模拟点击抓取下级数据...")
